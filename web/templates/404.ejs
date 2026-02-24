@@ -1,0 +1,24 @@
+<%- include("./tenant/template", { title: "รายงานปัญหา" , content: ` <div
+    class="flex flex-col items-center justify-center gap-6 text-center">
+    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
+        <span class="text-3xl font-semibold">404</span>
+    </div>
+
+    <div class="space-y-2">
+        <h2 class="text-2xl font-semibold tracking-tight text-gray-900">ไม่พบหน้านี้</h2>
+        <p class="text-sm text-gray-500">หน้าที่คุณค้นหาอาจถูกย้าย หรือไม่มีอยู่แล้วในระบบ</p>
+    </div>
+
+    <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+        <a href="/"
+            class="w-full rounded-full bg-blue-600 px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 sm:w-auto">
+            กลับหน้าแรก
+        </a>
+        <a href="/view-report"
+            class="w-full rounded-full border border-gray-200 px-6 py-3 text-center text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 sm:w-auto">
+            ดูรายงานของฉัน
+        </a>
+    </div>
+    </div>
+    `
+    }) %>

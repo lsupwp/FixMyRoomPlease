@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <%- include('../head') %>
+    <title>เข้าสู่ระบบ - FixMyRoom</title>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200 text-gray-900" style="font-family: 'Space Grotesk', sans-serif;">
+    <div class="flex items-center justify-center px-4 py-8 min-h-screen">
+        <div class="w-full max-w-md rounded-2xl border border-gray-300/80 bg-white p-8 shadow-sm sm:p-10">
+            <div class="mb-8 text-center">
+                <div class="flex h-14 w-14 items-center justify-center rounded-2xl mx-auto mb-4">
+                    <img src="/images/logo.png" alt="FixMyRoom logo" class="h-10 w-10 rounded-xl object-contain">
+                </div>
+                <h1 class="text-2xl font-semibold tracking-tight">FixMyRoomPlease</h1>
+                <p class="mt-2 text-sm text-gray-600">เข้าสู่ระบบเพื่อแจ้งปัญหา</p>
+            </div>
+
+            <% if (error) { %>
+                <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <form action="/login" method="post" class="grid gap-6">
+                <div class="grid gap-2">
+                    <label class="text-sm font-medium text-gray-700" for="username">ชื่อผู้ใช้</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        required
+                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                        placeholder="กรอกชื่อผู้ใช้ของคุณ"
+                    >
+                </div>
+
+                <div class="grid gap-2">
+                    <label class="text-sm font-medium text-gray-700" for="password">รหัสผ่าน</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                        placeholder="กรอกรหัสผ่านของคุณ"
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                >
+                    เข้าสู่ระบบ
+                </button>
+            </form>
+
+            <!-- <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600">
+                    ยังไม่มีบัญชี?
+                    <a href="/register" class="font-medium text-blue-600 transition hover:text-blue-500">สมัครสมาชิก</a>
+                </p>
+            </div> -->
+        </div>
+    </div>
+</body>
+</html>

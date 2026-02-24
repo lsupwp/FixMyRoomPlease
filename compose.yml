@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mysql:9.6.0
+    container_name: fixmyroom-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: P@sword1234!
+      MYSQL_DATABASE: fixmyroom
+      MYSQL_USER: lsupwp
+      MYSQL_PASSWORD:  P@sword1234!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - fixmyroom_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: fixmyroom-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: lsupwp
+      PMA_PASSWORD:  P@sword1234!
+      PMA_ROOT_PASSWORD:  P@sword1234!
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - fixmyroom_network
+
+volumes:
+  mysql_data:
+
+networks:
+  fixmyroom_network:
+    driver: bridge
