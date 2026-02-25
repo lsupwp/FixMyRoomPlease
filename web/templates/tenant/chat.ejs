@@ -1,51 +1,132 @@
-<%- include("./template", {
-    title: "แชท",
-    content: `
-        <div class="flex flex-col gap-6 sm:gap-8 h-full">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-semibold tracking-tight">แชท</h2>
-                    <p class="text-sm text-gray-500">คุยกับ Admin Support</p>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-sm font-semibold text-green-700">
-                    🟢
-                </div>
-            </div>
+<!DOCTYPE html>
+<html lang="en">
 
-            <div class="flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                ${(messages || []).map((msg) => {
-                    const isOwn = msg.sender === userRole;
-                    return `
-                    <div class="mb-4">
-                        <div class="flex gap-3 max-w-xs ${isOwn ? 'flex-row-reverse ml-auto' : 'flex-row mr-auto'}">
-                            ${!isOwn ? `
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
-                                    ${msg.senderAvatar || '?'}
-                                </div>
-                            ` : ''}
-                            <div class="flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}">
-                                <span class="text-xs font-semibold text-gray-600">${msg.senderName}</span>
-                                <div class="rounded-2xl px-4 py-2 ${isOwn ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}">
-                                    <p class="text-sm">${msg.message}</p>
-                                </div>
-                                <span class="text-xs text-gray-500">${msg.timestamp}</span>
+<head>
+    <%- include('../head') %>
+        <title>แชท</title>
+</head>
+
+<body class="min-h-screen bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200 text-gray-900"
+    style="font-family: 'Space Grotesk', sans-serif;" data-user-role="<%= userRole %>">
+    <%- include('./partials/header') %>
+
+        <div class="w-full px-4 sm:px-6 lg:px-10">
+            <main class="py-8 sm:py-10">
+                <section class="w-full rounded-2xl border border-gray-300/80 bg-gray-50/80 p-5 shadow-sm sm:p-8">
+                    <div class="flex flex-col gap-6 sm:gap-8" style="height: calc(100vh - 200px);">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-semibold tracking-tight">แชท</h2>
+                                <p class="text-sm text-gray-500">คุยกับ Admin Support</p>
+                            </div>
+                            <div id="connectionStatus"
+                                class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-sm font-semibold text-green-700">
+                                🟢
                             </div>
                         </div>
-                    </div>
-                    `;
-                }).join('')}
-            </div>
 
-            <div class="flex gap-3">
-                <input 
-                    type="text" 
-                    placeholder="พิมพ์ข้อความ..."
-                    class="flex-1 w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
-                >
-                <button class="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300">
-                    ส่ง
-                </button>
-            </div>
+                        <div id="messagesContainer"
+                            class="flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <div id="messagesList">
+                                <% if (messages && messages.length> 0) { %>
+                                    <% messages.forEach(function(msg) { %>
+                                        <% const isOwn=msg.sender===userRole; %>
+                                            <div class="mb-4 message-item" data-message-id="<%= msg.id %>" data-is-own="<%= isOwn %>">
+                                                <div
+                                                    class="flex gap-3 max-w-xs <%= isOwn ? 'flex-row-reverse ml-auto' : 'flex-row mr-auto' %>">
+                                                    <% if (!isOwn) { %>
+                                                        <div
+                                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                                                            <%= msg.senderAvatar || '?' %>
+                                                        </div>
+                                                        <% } %>
+                                                            <div
+                                                                class="flex flex-col gap-1 <%= isOwn ? 'items-end' : 'items-start' %>">
+                                                                <div class="flex items-center gap-2">
+                                                                    <span class="text-xs font-semibold text-gray-600">
+                                                                        <%= msg.senderName %>
+                                                                    </span>
+                                                                    <% if (isOwn && !msg.isDeleted) { %>
+                                                                        <button type="button"
+                                                                            class="text-[10px] text-gray-400 transition hover:text-red-500"
+                                                                            onclick="deleteMessage(<%= msg.id %>)">ลบ</button>
+                                                                        <% } %>
+                                                                </div>
+                                                                <div
+                                                                    class="rounded-2xl px-4 py-2 <%= msg.isDeleted ? 'bg-gray-100 text-gray-500' : (isOwn ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900') %>">
+                                                                    <% if (msg.isDeleted) { %>
+                                                                        <p class="text-sm">ข้อความถูกลบแล้ว</p>
+                                                                    <% } else { %>
+                                                                        <% if (msg.message) { %>
+                                                                            <p class="text-sm">
+                                                                                <%= msg.message %>
+                                                                            </p>
+                                                                            <% } %>
+                                                                                <% if (msg.attachments &&
+                                                                                    msg.attachments.length> 0) { %>
+                                                                                    <div
+                                                                                        class="mt-2 grid grid-cols-2 gap-2">
+                                                                                        <% msg.attachments.forEach(function
+                                                                                            (att) { %>
+                                                                                            <a href="<%= att.url %>"
+                                                                                                target="_blank"
+                                                                                                rel="noreferrer"
+                                                                                                class="block overflow-hidden rounded-xl bg-gray-200">
+                                                                                                <img src="<%= att.url %>"
+                                                                                                    alt="รูปแนบ"
+                                                                                                    class="h-24 w-full object-cover">
+                                                                                            </a>
+                                                                                            <% }) %>
+                                                                                    </div>
+                                                                                    <% } %>
+                                                                    <% } %>                                                                </div>
+                                                                <span class="text-xs text-gray-500">
+                                                                    <%= msg.timestamp %>
+                                                                </span>
+                                                            </div>
+                                                </div>
+                                            </div>
+                                            <% }) %>
+                                                <% } else { %>
+                                                    <div
+                                                        class="flex flex-col items-center justify-center h-full text-center py-12">
+                                                        <svg class="mb-4 h-16 w-16 text-gray-400" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="1.5"
+                                                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                                        </svg>
+                                                        <h3 class="text-lg font-semibold text-gray-900">เริ่มต้นการสนทนา
+                                                        </h3>
+                                                        <p class="text-sm text-gray-500 mt-2">ส่งข้อความเพื่อคุยกับ
+                                                            Admin</p>
+                                                    </div>
+                                                    <% } %>
+                            </div>
+                        </div>
+
+                        <form id="chatForm" class="flex items-center gap-3">
+                            <input type="hidden" id="inboxId" value="<%= inboxId %>">
+                            <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
+                            <button type="button" id="attachButton"
+                                class="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-sm text-gray-600 shadow-sm transition hover:bg-gray-50">
+                                <img src="/images/image-icon.png" alt="แนบรูป" class="h-5 w-5">
+                            </button>
+                            <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ..."
+                                class="flex-1 w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200">
+                            <button type="submit" id="sendButton"
+                                class="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                                ส่ง
+                            </button>
+                        </form>
+                        <p id="fileCount" class="text-xs text-gray-500"></p>
+                    </div>
+                </section>
+            </main>
         </div>
-    `
-}) %>
+
+        <%- include('../partials/confirmation-modal') %>
+        <script src="/scripts/tenant/chat.js"></script>
+</body>
+
+</html>

@@ -1,6 +1,16 @@
 CREATE DATABASE IF NOT EXISTS fixmyroom;
 USE fixmyroom;
 
+DROP TABLE IF EXISTS inbox_participants;
+DROP TABLE IF EXISTS message_attachments;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS inbox;
+DROP TABLE IF EXISTS problem_images;
+DROP TABLE IF EXISTS problems;
+DROP TABLE IF EXISTS tenants;
+DROP TABLE IF EXISTS admin;
+DROP TABLE IF EXISTS accounts;
+
 
 CREATE TABLE IF NOT EXISTS accounts (
     account_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -66,6 +76,17 @@ CREATE TABLE IF NOT EXISTS messages (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (inbox_id) REFERENCES inbox(inbox_id),
     FOREIGN KEY (sender_id) REFERENCES accounts(account_id)
+);
+
+CREATE TABLE IF NOT EXISTS message_attachments (
+    attachment_id INT(255) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    message_id INT(255) NOT NULL,
+    file_url VARCHAR(255) NOT NULL,
+    file_type VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (message_id) REFERENCES messages(message_id)
 );
 
 CREATE TABLE IF NOT EXISTS inbox_participants (

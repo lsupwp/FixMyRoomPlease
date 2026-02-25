@@ -1,12 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const pool = require('../../db');
+const pool = require('../db');
 
 const router = express.Router();
 
 // Login page route
 router.get('/login', (req, res) => {
-  res.render('tenant/login', { title: 'Login', error: null });
+  res.render('login', { title: 'Login', error: null });
 });
 
 router.post('/login', async (req, res)=>{
@@ -16,7 +16,7 @@ router.post('/login', async (req, res)=>{
   const strippedPassword = password.trim();
 
   if (!strippedUsername || !strippedPassword) {
-    return res.render('tenant/login', { 
+    return res.render('login', { 
       title: 'Login',
       error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'
     });
@@ -35,7 +35,7 @@ router.post('/login', async (req, res)=>{
     );
 
     if (rows.length === 0) {
-      return res.render('tenant/login', { 
+      return res.render('login', { 
         title: 'Login',
         error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
       });
@@ -45,7 +45,7 @@ router.post('/login', async (req, res)=>{
     const isMatch = await bcrypt.compare(strippedPassword, account.password);
 
     if (!isMatch) {
-      return res.render('tenant/login', { 
+      return res.render('login', { 
         title: 'Login',
         error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
       });
@@ -58,9 +58,14 @@ router.post('/login', async (req, res)=>{
       role: account.role
     };
 
+    // Redirect based on role
+    if (account.role === 'admin') {
+      return res.redirect('/admin/problems');
+    }
+    
     return res.redirect('/');
   } catch (error) {
-    return res.render('tenant/login', { 
+    return res.render('login', { 
       title: 'Login',
       error: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
     });

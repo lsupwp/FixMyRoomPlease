@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../head') %>
+    <title>จัดการปัญหา</title>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200 text-gray-900" style="font-family: 'Space Grotesk', sans-serif;">
+    <%- include('./partials/header') %>
+
+    <div class="w-full px-4 sm:px-6 lg:px-10">
+        <main class="py-8 sm:py-10">
+            <section class="w-full rounded-2xl border border-gray-300/80 bg-gray-50/80 p-5 shadow-sm sm:p-8">
+                <div class="grid gap-6 sm:gap-8">
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight">จัดการปัญหาทั้งหมด</h2>
+                        <p class="text-sm text-gray-500">ดูและจัดการปัญหาที่ผู้เช่าแจ้งทั้งหมด</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหา Username</label>
+                                <input
+                                    type="text"
+                                    id="searchUsername"
+                                    placeholder="ค้นหา username..."
+                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">สถานะ</label>
+                                <select
+                                    id="searchStatus"
+                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                                >
+                                    <option value="">ทั้งหมด</option>
+                                    <option value="unresolved">รอการแก้ไข</option>
+                                    <option value="resolved">แก้ไขแล้ว</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4">
+                        <% if (problems && problems.length > 0) { %>
+                            <% problems.forEach(function (problem) { %>
+                                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm <%= (problem.status === 'resolved' || problem.status === 'cancelled') ? 'opacity-75' : '' %> sm:p-6">
+                                    <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <h3 class="text-lg font-semibold text-gray-900">รายงาน #<%= String(problem.id).padStart(3, '0') %> • ห้อง <%= problem.roomNumber %></h3>
+                                                <span class="inline-block rounded-full px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-700"><%= problem.username %></span>
+                                            </div>
+                                        </div>
+                                        <span class="inline-block w-fit rounded-full <%= problem.badge.bg %> px-3 py-1 text-xs font-semibold <%= problem.badge.text %>">
+                                            <%= problem.badge.label %>
+                                        </span>
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-700"><%= problem.description %></p>
+                                        <% if (problem.images && problem.images.length > 0) { %>
+                                            <div class="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                                <% problem.images.forEach(function (img) { %>
+                                                    <div class="overflow-hidden rounded-xl bg-gray-200">
+                                                        <% if (img.image_url) { %>
+                                                            <img src="<%= img.image_url %>" alt="<%= img.placeholder || 'รูปภาพ' %>" class="h-40 w-full object-cover sm:h-48">
+                                                        <% } else { %>
+                                                            <div class="h-40 bg-gradient-to-br <%= img.gradient %> flex items-center justify-center text-xs text-white font-semibold sm:h-48">
+                                                                <%= img.placeholder %>
+                                                            </div>
+                                                        <% } %>
+                                                    </div>
+                                                <% }) %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                    <div class="flex flex-col gap-2 border-t border-gray-200 pt-4 sm:flex-row">
+                                        <span class="text-xs text-gray-500">
+                                            แจ้ง: <%= problem.createdDate %>
+                                            <% if (problem.createdTime) { %> เวลา <%= problem.createdTime %><% } %>
+                                            <% if (problem.updatedDate) { %> • แก้ไข: <%= problem.updatedDate %><% } %>
+                                        </span>
+                                        <div class="flex flex-col gap-2 sm:ml-auto sm:flex-row">
+                                            <a href="/admin/problem/<%= problem.id %>" class="rounded-full border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 text-center transition hover:bg-gray-50">
+                                                ดูรายละเอียด
+                                            </a>
+                                            <% if (problem.status !== 'resolved' && problem.status !== 'cancelled') { %>
+                                                <button type="button" onclick="markAsResolved(<%= problem.id %>)" class="rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-500">
+                                                    ✓ แก้ไขเสร็จแล้ว
+                                                </button>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-16">
+                                <svg class="mb-4 h-20 w-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 class="mb-2 text-lg font-semibold text-gray-900">ไม่มีปัญหาที่แจ้ง</h3>
+                                <p class="text-center text-sm text-gray-500">ยังไม่มีผู้เช่าแจ้งปัญหาใดๆ</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/scripts/admin/view-problen.js"></script>
+
+    <%- include('../partials/confirmation-modal') %>
+</body>
+</html>

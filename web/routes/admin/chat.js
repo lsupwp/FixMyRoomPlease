@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        const username = req.session?.username || 'unknown';
+        const username = req.session?.username || 'admin';
         const timestamp = Date.now();
         const ext = path.extname(file.originalname);
         cb(null, `${username}_chat_${timestamp}${ext}`);
@@ -65,7 +65,7 @@ const buildMessagesFromRows = (rows) => {
             messageMap.set(row.message_id, {
                 id: row.message_id,
                 sender: row.role,
-                senderName: row.role === 'admin' ? 'Admin Support' : row.username,
+                senderName: row.role === 'admin' ? 'คุณ' : row.username,
                 senderAvatar: row.role === 'admin' ? 'A' : row.username.charAt(0).toUpperCase(),
                 message: row.message_text,
                 timestamp: formatTime(row.created_at),
@@ -86,107 +86,135 @@ const buildMessagesFromRows = (rows) => {
 };
 
 router.get('/chat', async (req, res) => {
-    if (!req.session || req.session.role !== 'tenant') {
+    if (!req.session || req.session.role !== 'admin') {
         return res.redirect('/login');
     }
 
     try {
-        // Get or create inbox
-        const inbox = await withConnection(async (connection) => {
-            // Try to find existing inbox
-            const [inboxRows] = await connection.execute(
-                `SELECT inbox_id FROM inbox WHERE tenant_id = ?`,
-                [req.session.account_id]
-            );
-
-            let inboxId;
-            if (inboxRows.length > 0) {
-                inboxId = inboxRows[0].inbox_id;
-            } else {
-                // Create new inbox with first admin
-                const [adminRows] = await connection.execute(
-                    `SELECT account_id FROM admin LIMIT 1`
-                );
-                
-                if (adminRows.length === 0) {
-                    throw new Error('No admin available');
-                }
-
-                const [result] = await connection.execute(
-                    `INSERT INTO inbox (tenant_id, admin_id) VALUES (?, ?)`,
-                    [req.session.account_id, adminRows[0].account_id]
-                );
-                inboxId = result.insertId;
-            }
-
-            return inboxId;
-        });
-
-        // Get messages
-        const messages = await withConnection(async (connection) => {
-            const [idRows] = await connection.execute(
-                `
-                    SELECT message_id
-                    FROM messages
-                    WHERE inbox_id = ?
-                    ORDER BY message_id DESC
-                    LIMIT 20
-                `,
-                [inbox]
-            );
-
-            const messageIds = idRows.map((row) => row.message_id);
-            if (messageIds.length === 0) {
-                return [];
-            }
-
-            const placeholders = messageIds.map(() => '?').join(',');
+        // Get all inboxes with tenant info and unread count
+        const inboxes = await withConnection(async (connection) => {
             const [rows] = await connection.execute(
                 `
                     SELECT 
-                        m.message_id,
-                        m.message_text,
-                        m.created_at,
-                        m.sender_id,
-                        m.is_deleted,
-                        a.role,
+                        i.inbox_id,
+                        i.tenant_id,
                         a.username,
-                        ma.file_url,
-                        ma.file_type,
-                        ma.attachment_id
-                    FROM messages m
-                    JOIN accounts a ON a.account_id = m.sender_id
-                    LEFT JOIN message_attachments ma
-                        ON ma.message_id = m.message_id
-                        AND ma.is_deleted = FALSE
-                    WHERE m.message_id IN (${placeholders})
-                    ORDER BY m.message_id DESC, ma.attachment_id ASC
+                        t.room_number,
+                        (SELECT message_text 
+                         FROM messages 
+                         WHERE inbox_id = i.inbox_id AND is_deleted = FALSE 
+                         ORDER BY created_at DESC 
+                         LIMIT 1) as last_message,
+                        (SELECT created_at 
+                         FROM messages 
+                         WHERE inbox_id = i.inbox_id AND is_deleted = FALSE 
+                         ORDER BY created_at DESC 
+                         LIMIT 1) as last_message_time,
+                        COALESCE(ip.last_read_message_id, 0) as last_read_message_id,
+                        (SELECT COUNT(*) 
+                         FROM messages 
+                         WHERE inbox_id = i.inbox_id 
+                         AND sender_id != ? 
+                         AND message_id > COALESCE(ip.last_read_message_id, 0)
+                         AND is_deleted = FALSE) as unread_count
+                    FROM inbox i
+                    LEFT JOIN inbox_participants ip ON i.inbox_id = ip.inbox_id AND ip.account_id = ?
+                    JOIN tenants t ON t.account_id = i.tenant_id
+                    JOIN accounts a ON a.account_id = i.tenant_id
+                    WHERE i.admin_id = ?
+                    ORDER BY last_message_time DESC
                 `,
-                messageIds
+                [req.session.account_id, req.session.account_id, req.session.account_id]
             );
 
-            return buildMessagesFromRows(rows).reverse();
+            return rows.map(row => ({
+                inboxId: row.inbox_id,
+                tenantId: row.tenant_id,
+                username: row.username,
+                roomNumber: row.room_number,
+                lastMessage: row.last_message ? (row.last_message.length > 40 ? row.last_message.slice(0, 40) + '...' : row.last_message) : 'ยังไม่มีข้อความ',
+                lastMessageTime: row.last_message_time ? formatTime(row.last_message_time) : '',
+                unreadCount: row.unread_count || 0,
+                lastReadMessageId: row.last_read_message_id
+            }));
         });
 
-        return res.render('tenant/chat', {
+        // Get selected inbox
+        const selectedInboxId = req.query.inbox ? parseInt(req.query.inbox) : (inboxes.length > 0 ? inboxes[0].inboxId : null);
+        
+        let messages = [];
+        let selectedInbox = null;
+
+        if (selectedInboxId) {
+            selectedInbox = inboxes.find(i => i.inboxId === selectedInboxId);
+            
+            messages = await withConnection(async (connection) => {
+                const [idRows] = await connection.execute(
+                    `
+                        SELECT message_id
+                        FROM messages
+                        WHERE inbox_id = ?
+                        ORDER BY message_id DESC
+                        LIMIT 20
+                    `,
+                    [selectedInboxId]
+                );
+
+                const messageIds = idRows.map((row) => row.message_id);
+                if (messageIds.length === 0) {
+                    return [];
+                }
+
+                const placeholders = messageIds.map(() => '?').join(',');
+                const [rows] = await connection.execute(
+                    `
+                        SELECT 
+                            m.message_id,
+                            m.message_text,
+                            m.created_at,
+                            m.sender_id,
+                            m.is_deleted,
+                            a.role,
+                            a.username,
+                            ma.file_url,
+                            ma.file_type,
+                            ma.attachment_id
+                        FROM messages m
+                        JOIN accounts a ON a.account_id = m.sender_id
+                        LEFT JOIN message_attachments ma
+                            ON ma.message_id = m.message_id
+                            AND ma.is_deleted = FALSE
+                        WHERE m.message_id IN (${placeholders})
+                        ORDER BY m.message_id DESC, ma.attachment_id ASC
+                    `,
+                    messageIds
+                );
+
+                return buildMessagesFromRows(rows).reverse();
+            });
+        }
+
+        return res.render('admin/chat', {
             title: 'แชท',
+            inboxes: inboxes,
             messages: messages,
-            userRole: 'tenant',
-            inboxId: inbox
+            selectedInbox: selectedInbox,
+            userRole: 'admin'
         });
     } catch (error) {
-        console.error('Chat fetch error:', error);
-        return res.render('tenant/chat', {
+        console.error('Admin chat fetch error:', error);
+        return res.render('admin/chat', {
             title: 'แชท',
+            inboxes: [],
             messages: [],
-            userRole: 'tenant',
-            inboxId: null
+            selectedInbox: null,
+            userRole: 'admin'
         });
     }
 });
 
 router.get('/chat/messages', async (req, res) => {
-    if (!req.session || req.session.role !== 'tenant') {
+    if (!req.session || req.session.role !== 'admin') {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -252,13 +280,13 @@ router.get('/chat/messages', async (req, res) => {
 
         return res.json(result);
     } catch (error) {
-        console.error('Chat pagination error:', error);
+        console.error('Admin chat pagination error:', error);
         return res.status(500).json({ error: 'Failed to load messages' });
     }
 });
 
 router.post('/chat/send', upload.array('images', 3), async (req, res) => {
-    if (!req.session || req.session.role !== 'tenant') {
+    if (!req.session || req.session.role !== 'admin') {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -329,63 +357,17 @@ router.post('/chat/send', upload.array('images', 3), async (req, res) => {
                     client.send(payload);
                 }
             });
-            
-            // Calculate actual unread count based on admin's last_read_message_id
-            try {
-                const [inboxRows] = await pool.query(
-                    `SELECT admin_id FROM inbox WHERE inbox_id = ?`,
-                    [inboxId]
-                );
-
-                if (inboxRows.length > 0) {
-                    const adminId = inboxRows[0].admin_id;
-
-                    const [participantRows] = await pool.query(
-                        `SELECT last_read_message_id FROM inbox_participants WHERE inbox_id = ? AND account_id = ?`,
-                        [inboxId, adminId]
-                    );
-                    const lastReadMessageId = participantRows.length > 0 ? (participantRows[0].last_read_message_id || 0) : 0;
-
-                    const [unreadRows] = await pool.query(
-                        `SELECT COUNT(*) as count
-                         FROM messages
-                         WHERE inbox_id = ?
-                           AND sender_id = ?
-                           AND message_id > ?
-                           AND is_deleted = FALSE`,
-                        [inboxId, req.session.account_id, lastReadMessageId]
-                    );
-                    const actualUnreadCount = unreadRows[0]?.count || 0;
-
-                    const previewText = text || (files.length > 0 ? '📷 รูปภาพ' : '');
-                    const unreadUpdate = JSON.stringify({
-                        type: 'unread-update',
-                        inboxId: inboxId,
-                        unreadCount: actualUnreadCount,
-                        lastMessage: previewText,
-                        lastMessageTime: result?.timestamp || formatTime(new Date()),
-                        bump: true
-                    });
-                    wss.clients.forEach((client) => {
-                        if (client.readyState === WebSocket.OPEN) {
-                            client.send(unreadUpdate);
-                        }
-                    });
-                }
-            } catch (err) {
-                console.error('Error calculating unread count:', err);
-            }
         }
 
         return res.json(result);
     } catch (error) {
-        console.error('Send message error:', error);
+        console.error('Admin send message error:', error);
         return res.status(500).json({ error: 'Failed to send message' });
     }
 });
 
 router.delete('/chat/message/:id', async (req, res) => {
-    if (!req.session || req.session.role !== 'tenant') {
+    if (!req.session || req.session.role !== 'admin') {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -419,8 +401,48 @@ router.delete('/chat/message/:id', async (req, res) => {
 
         return res.json({ success: true });
     } catch (error) {
-        console.error('Delete message error:', error);
+        console.error('Admin delete message error:', error);
         return res.status(500).json({ error: 'Failed to delete message' });
+    }
+});
+
+// Mark messages as read
+router.post('/chat/mark-read', async (req, res) => {
+    if (!req.session || req.session.role !== 'admin') {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { inboxId, messageId } = req.body;
+    if (!inboxId || !messageId) {
+        return res.status(400).json({ error: 'Missing inboxId or messageId' });
+    }
+
+    try {
+        let unreadCount = 0;
+        await withConnection(async (connection) => {
+            await connection.execute(
+                `
+                    INSERT INTO inbox_participants (inbox_id, account_id, last_read_message_id)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE last_read_message_id = VALUES(last_read_message_id)
+                `,
+                [inboxId, req.session.account_id, messageId]
+            );
+            
+            // Calculate unread count
+            const [unreadRows] = await connection.query(
+                `SELECT COUNT(*) as count FROM messages 
+                 WHERE inbox_id = ? AND sender_id != ? AND message_id > ? AND is_deleted = FALSE`,
+                [inboxId, req.session.account_id, messageId]
+            );
+            unreadCount = unreadRows[0]?.count || 0;
+        });
+
+        // Don't broadcast - let frontend update locally
+        return res.json({ success: true, unreadCount });
+    } catch (error) {
+        console.error('Mark read error:', error);
+        return res.status(500).json({ error: 'Failed to mark as read' });
     }
 });
 

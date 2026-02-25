@@ -3,18 +3,17 @@
     <div class="rounded-2xl border border-gray-200 bg-white shadow-lg sm:max-w-md">
         <div class="border-b border-gray-200 p-6">
             <h3 class="text-lg font-semibold text-gray-900">ยกเลิกรายงาน</h3>
-            <p class="mt-2 text-sm text-gray-600">คุณแน่ใจหรือว่ากำลังจะยกเลิกรายงานนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้</p>
+            <p class="mt-2 text-sm text-gray-600">คุณแน่ใจหรือว่ากำลังจะยกเลิกรายงานนี้?
+                การดำเนินการนี้ไม่สามารถยกเลิกได้</p>
         </div>
         <div class="flex gap-3 p-6">
-            <button 
-                type="button"
-                onclick="closeCancelModal()"
+            <button type="button" onclick="closeCancelModal()"
                 class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
                 ไม่
             </button>
-            <form id="cancelForm" method="POST" action="/report/<%= typeof reportId !== 'undefined' ? reportId : '' %>/cancel" class="flex-1">
-                <button 
-                    type="submit"
+            <form id="cancelForm" method="POST"
+                action="/report/<%= typeof reportId !== 'undefined' ? reportId : '' %>/cancel" class="flex-1">
+                <button type="submit"
                     class="w-full rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500">
                     ใช่ ยกเลิกรายงาน
                 </button>
@@ -28,12 +27,12 @@
         const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
         const isMobile = window.innerWidth < 640;
         const blurAmount = isMobile ? '100px' : '4px';
-        
+
         // If reportIdParam is provided, update the form action
         if (reportIdParam) {
             document.getElementById('cancelForm').action = `/report/${reportIdParam}/cancel`;
         }
-        
+
         document.getElementById('cancelModal').classList.remove('hidden');
         document.getElementById('cancelModal').style.backdropFilter = `blur(${blurAmount})`;
         document.body.style.overflow = 'hidden';

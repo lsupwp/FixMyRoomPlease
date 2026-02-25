@@ -1,171 +1,103 @@
-<%- include("./template", {
-    title: "รายงานปัญหา",
-    content: `
-        <div class="grid gap-6 sm:gap-8">
-            <div>
-                <h2 class="text-2xl font-semibold tracking-tight">รายงานปัญหา</h2>
-                <p class="text-sm text-gray-500">แจ้งปัญหาในห้องพักและแนบรูปภาพเพื่อช่วยให้แก้ไขได้เร็วขึ้น</p>
-            </div>
-` + (error ? `
-            <div id="errorAlert" class="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
-                <div class="flex items-start gap-3">
-                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600">
-                        <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../head') %>
+    <title>รายงานปัญหา</title>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200 text-gray-900" style="font-family: 'Space Grotesk', sans-serif;">
+    <%- include('./partials/header') %>
+
+    <div class="w-full px-4 sm:px-6 lg:px-10">
+        <main class="py-8 sm:py-10">
+            <section class="w-full rounded-2xl border border-gray-300/80 bg-gray-50/80 p-5 shadow-sm sm:p-8">
+                <div class="grid gap-6 sm:gap-8">
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight">รายงานปัญหา</h2>
+                        <p class="text-sm text-gray-500">แจ้งปัญหาในห้องพักและแนบรูปภาพเพื่อช่วยให้แก้ไขได้เร็วขึ้น</p>
                     </div>
-                    <div class="flex-1">
-                        <h3 class="text-sm font-semibold text-red-900">เกิดข้อผิดพลาด</h3>
-                        <p class="mt-1 text-sm text-red-700">${error}</p>
-                    </div>
-                    <button 
-                        type="button" 
-                        onclick="document.getElementById('errorAlert').remove()"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-red-600 transition hover:bg-red-100"
-                    >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
+
+                    <% if (error) { %>
+                        <div id="errorAlert" class="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600">
+                                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-sm font-semibold text-red-900">เกิดข้อผิดพลาด</h3>
+                                    <p class="mt-1 text-sm text-red-700"><%= error %></p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onclick="document.getElementById('errorAlert').remove()"
+                                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-red-600 transition hover:bg-red-100"
+                                >
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <form action="/tenant/report" method="post" enctype="multipart/form-data" class="grid gap-5 sm:gap-6">
+                        <div class="grid gap-2">
+                            <label class="text-sm font-medium text-gray-700" for="problem">ระบุปัญหา</label>
+                            <textarea
+                                id="problem"
+                                name="problem"
+                                required
+                                rows="6"
+                                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                                placeholder="เช่น แอร์ไม่เย็น น้ำรั่ว หรือไฟกระพริบ"
+                            ></textarea>
+                        </div>
+
+                        <div class="grid gap-3">
+                            <label class="text-sm font-medium text-gray-700" for="images">อัพโหลดรูปภาพ (ไม่บังคับ)</label>
+                            <input
+                                type="file"
+                                id="images"
+                                name="images"
+                                accept="image/*"
+                                multiple
+                                class="hidden"
+                            >
+                            <div
+                                id="dropzone"
+                                class="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center text-sm text-gray-600 transition hover:border-blue-300 hover:bg-blue-50/40"
+                            >
+                                <span class="font-medium text-gray-800">ลากรูปมาวางที่นี่</span>
+                                <span class="text-xs text-gray-500">หรือคลิกเพื่อเลือกรูป (เลือกได้หลายไฟล์)</span>
+                                <button type="button" id="pickImages" class="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-500">
+                                    เลือกรูปภาพ
+                                </button>
+                            </div>
+                            <div id="previewGrid" class="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"></div>
+                            <p class="text-xs text-gray-500">รองรับไฟล์รูปภาพเท่านั้น</p>
+                        </div>
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <button
+                                type="submit"
+                                class="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto"
+                            >
+                                ส่งรายงาน
+                            </button>
+                            <a
+                                href="/"
+                                class="w-full rounded-full border border-gray-200 px-6 py-3 text-center text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 sm:w-auto"
+                            >
+                                ย้อนกลับ
+                            </a>
+                        </div>
+                    </form>
                 </div>
-            </div>
-` : '') + `
-            <form action="/tenant/report" method="post" enctype="multipart/form-data" class="grid gap-5 sm:gap-6">
-                <div class="grid gap-2">
-                    <label class="text-sm font-medium text-gray-700" for="problem">ระบุปัญหา</label>
-                    <textarea
-                        id="problem"
-                        name="problem"
-                        required
-                        rows="6"
-                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
-                        placeholder="เช่น แอร์ไม่เย็น น้ำรั่ว หรือไฟกระพริบ"
-                    ></textarea>
-                </div>
+            </section>
+        </main>
+    </div>
 
-                <div class="grid gap-3">
-                    <label class="text-sm font-medium text-gray-700" for="images">อัพโหลดรูปภาพ (ไม่บังคับ)</label>
-                    <input
-                        type="file"
-                        id="images"
-                        name="images"
-                        accept="image/*"
-                        multiple
-                        class="hidden"
-                    >
-                    <div
-                        id="dropzone"
-                        class="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center text-sm text-gray-600 transition hover:border-blue-300 hover:bg-blue-50/40"
-                    >
-                        <span class="font-medium text-gray-800">ลากรูปมาวางที่นี่</span>
-                        <span class="text-xs text-gray-500">หรือคลิกเพื่อเลือกรูป (เลือกได้หลายไฟล์)</span>
-                        <button type="button" id="pickImages" class="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-500">
-                            เลือกรูปภาพ
-                        </button>
-                    </div>
-                    <div id="previewGrid" class="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"></div>
-                    <p class="text-xs text-gray-500">รองรับไฟล์รูปภาพเท่านั้น</p>
-                </div>
-
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <button
-                        type="submit"
-                        class="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto"
-                    >
-                        ส่งรายงาน
-                    </button>
-                    <a
-                        href="/"
-                        class="w-full rounded-full border border-gray-200 px-6 py-3 text-center text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 sm:w-auto"
-                    >
-                        ย้อนกลับ
-                    </a>
-                </div>
-            </form>
-        </div>
-
-        <script>
-            (function () {
-                const input = document.getElementById('images');
-                const dropzone = document.getElementById('dropzone');
-                const pickButton = document.getElementById('pickImages');
-                const previewGrid = document.getElementById('previewGrid');
-
-                if (!input || !dropzone || !pickButton || !previewGrid) return;
-
-                const filesState = [];
-
-                const syncInputFiles = () => {
-                    const dataTransfer = new DataTransfer();
-                    filesState.forEach((file) => dataTransfer.items.add(file));
-                    input.files = dataTransfer.files;
-                };
-
-                const renderPreviews = () => {
-                    previewGrid.innerHTML = '';
-                    filesState.forEach((file, index) => {
-                        const url = URL.createObjectURL(file);
-
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm';
-
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.alt = file.name;
-                        img.className = 'h-40 w-full object-cover sm:h-48';
-
-                        const removeBtn = document.createElement('button');
-                        removeBtn.type = 'button';
-                        removeBtn.className = 'absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-sm font-semibold text-gray-700 shadow transition hover:bg-white';
-                        removeBtn.innerHTML = '&#10005;';
-                        removeBtn.addEventListener('click', () => {
-                            filesState.splice(index, 1);
-                            syncInputFiles();
-                            renderPreviews();
-                            URL.revokeObjectURL(url);
-                        });
-
-                        const caption = document.createElement('div');
-                        caption.className = 'truncate px-3 py-2 text-xs text-gray-600';
-                        caption.textContent = file.name;
-
-                        wrapper.appendChild(img);
-                        wrapper.appendChild(removeBtn);
-                        wrapper.appendChild(caption);
-                        previewGrid.appendChild(wrapper);
-                    });
-                };
-
-                const addFiles = (fileList) => {
-                    Array.from(fileList).forEach((file) => {
-                        if (!file.type.startsWith('image/')) return;
-                        filesState.push(file);
-                    });
-                    syncInputFiles();
-                    renderPreviews();
-                };
-
-                pickButton.addEventListener('click', () => input.click());
-                input.addEventListener('change', (event) => addFiles(event.target.files));
-
-                ['dragenter', 'dragover'].forEach((eventName) => {
-                    dropzone.addEventListener(eventName, (event) => {
-                        event.preventDefault();
-                        dropzone.classList.add('border-blue-400', 'bg-blue-50');
-                    });
-                });
-
-                ['dragleave', 'drop'].forEach((eventName) => {
-                    dropzone.addEventListener(eventName, (event) => {
-                        event.preventDefault();
-                        dropzone.classList.remove('border-blue-400', 'bg-blue-50');
-                    });
-                });
-
-                dropzone.addEventListener('drop', (event) => {
-                    addFiles(event.dataTransfer.files);
-                });
-            })();
-        </script>
-    `
-}) %>
+    <script src="/scripts/tenant/home.js"></script>
+</body>
+</html>

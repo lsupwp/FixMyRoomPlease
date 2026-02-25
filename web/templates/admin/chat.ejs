@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <%- include('../head') %>
+    <title>แชท</title>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200 text-gray-900" style="font-family: 'Space Grotesk', sans-serif;" data-user-role="<%= userRole %>">
+    <%- include('./partials/header') %>
+
+    <div class="w-full px-4 sm:px-6 lg:px-10">
+        <main class="py-8 sm:py-10">
+            <section class="w-full rounded-2xl border border-gray-300/80 bg-gray-50/80 p-5 shadow-sm sm:p-8">
+                <div id="chatLayout" class="grid grid-rows-[auto_1fr] gap-6 lg:grid-cols-[320px_1fr] lg:grid-rows-1" style="height: calc(100vh - 200px);">
+                    <!-- Inbox List -->
+                    <div id="inboxPanel" class="flex h-56 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:h-64 lg:h-full">
+                        <div id="inboxHeader" class="flex items-center justify-between border-b border-gray-200 pb-3">
+                            <h3 class="text-sm font-semibold text-gray-900">รายการแชท</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                                    <%= inboxes.length %>
+                                </span>
+                                <button
+                                    id="toggleInbox"
+                                    type="button"
+                                    class="rounded-full border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                                    aria-expanded="true"
+                                    aria-label="ย่อรายการแชท"
+                                >
+                                    <<
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            id="inboxCollapsedBar"
+                            type="button"
+                            class="hidden h-full w-full items-center justify-center rounded-xl bg-gray-100 text-sm font-semibold text-gray-500"
+                            aria-label="ขยายรายการแชท"
+                        >
+                            >>
+                        </button>
+                        
+                        <div id="inboxContent" class="flex-1 overflow-y-auto">
+                            <% if (inboxes && inboxes.length > 0) { %>
+                                <% inboxes.forEach(function(inbox) { %>
+                                    <a 
+                                        href="/admin/chat?inbox=<%= inbox.inboxId %>" 
+                                        class="inbox-item block rounded-lg border p-3 transition <%= selectedInbox && selectedInbox.inboxId === inbox.inboxId ? 'border-blue-400 bg-blue-50' : (inbox.unreadCount > 0 ? 'border-blue-200 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50') %>"
+                                        data-inbox-id="<%= inbox.inboxId %>"
+                                        data-unread="<%= inbox.unreadCount %>"
+                                    >
+                                        <div class="flex items-start gap-3">
+                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full <%= inbox.unreadCount > 0 ? 'bg-blue-600' : 'bg-gray-400' %> text-sm font-semibold text-white">
+                                                <%= inbox.username.charAt(0).toUpperCase() %>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <h4 class="<%= inbox.unreadCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-500' %> text-sm truncate"><%= inbox.username %></h4>
+                                                    <div class="flex items-center gap-2 shrink-0">
+                                                        <% if (inbox.unreadCount > 0) { %>
+                                                            <span class="unread-badge inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs font-semibold text-white">
+                                                                <%= inbox.unreadCount > 99 ? '99+' : inbox.unreadCount %>
+                                                            </span>
+                                                        <% } %>
+                                                        <span class="inbox-time text-xs <%= inbox.unreadCount > 0 ? 'text-gray-600 font-medium' : 'text-gray-400' %>"><%= inbox.lastMessageTime %></span>
+                                                    </div>
+                                                </div>
+                                                <p class="text-xs text-gray-500">ห้อง <%= inbox.roomNumber %></p>
+                                                <p class="text-xs <%= inbox.unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-600' %> truncate mt-1"><%= inbox.lastMessage %></p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                <% }) %>
+                            <% } else { %>
+                                <div class="flex flex-col items-center justify-center py-8 text-center">
+                                    <svg class="mb-3 h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    <p class="text-sm text-gray-500">ยังไม่มีการสนทนา</p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div class="flex flex-col gap-4 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <% if (selectedInbox) { %>
+                            <!-- Chat Header -->
+                            <div class="flex items-center justify-between border-b border-gray-200 p-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+                                        <%= selectedInbox.username.charAt(0).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-900"><%= selectedInbox.username %></h3>
+                                        <p class="text-xs text-gray-500">ห้อง <%= selectedInbox.roomNumber %></p>
+                                    </div>
+                                </div>
+                                <div id="connectionStatus" class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-sm">
+                                    🟢
+                                </div>
+                            </div>
+
+                            <!-- Messages -->
+                            <div id="messagesContainer" class="flex-1 overflow-y-auto p-4">
+                                <div id="messagesList">
+                                    <% if (messages && messages.length > 0) { %>
+                                        <% messages.forEach(function(msg) { %>
+                                            <% const isOwn = msg.sender === userRole; %>
+                                            <div class="mb-4 message-item" data-message-id="<%= msg.id %>" data-is-own="<%= isOwn %>">
+                                                <div class="flex gap-3 max-w-xs <%= isOwn ? 'flex-row-reverse ml-auto' : 'flex-row mr-auto' %>">
+                                                    <% if (!isOwn) { %>
+                                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-400 text-xs font-semibold text-white">
+                                                            <%= msg.senderAvatar || '?' %>
+                                                        </div>
+                                                    <% } %>
+                                                    <div class="flex flex-col gap-1 <%= isOwn ? 'items-end' : 'items-start' %>">
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-xs font-semibold text-gray-600"><%= msg.senderName %></span>
+                                                            <% if (isOwn && !msg.isDeleted) { %>
+                                                                <button type="button" class="text-[10px] text-gray-400 transition hover:text-red-500" onclick="deleteMessage(<%= msg.id %>)">ลบ</button>
+                                                            <% } %>
+                                                        </div>
+                                                        <div class="rounded-2xl px-4 py-2 <%= msg.isDeleted ? 'bg-gray-100 text-gray-500' : (isOwn ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900') %>">
+                                                            <% if (msg.isDeleted) { %>
+                                                                <p class="text-sm">ข้อความถูกลบแล้ว</p>
+                                                            <% } else { %>
+                                                                <% if (msg.message) { %>
+                                                                    <p class="text-sm"><%= msg.message %></p>
+                                                                <% } %>
+                                                                <% if (msg.attachments && msg.attachments.length > 0) { %>
+                                                                    <div class="mt-2 grid grid-cols-2 gap-2">
+                                                                    <% msg.attachments.forEach(function (att) { %>
+                                                                        <a href="<%= att.url %>" target="_blank" rel="noreferrer" class="block overflow-hidden rounded-xl bg-gray-200">
+                                                                            <img src="<%= att.url %>" alt="รูปแนบ" class="h-24 w-full object-cover">
+                                                                        </a>
+                                                                    <% }) %>
+                                                                </div>
+                                                                <% } %>
+                                                            <% } %>
+                                                        </div>
+                                                        <span class="text-xs text-gray-500"><%= msg.timestamp %></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <div class="flex flex-col items-center justify-center h-full text-center py-12">
+                                            <svg class="mb-4 h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                            </svg>
+                                            <h3 class="text-lg font-semibold text-gray-900">เริ่มต้นการสนทนา</h3>
+                                            <p class="text-sm text-gray-500 mt-2">ส่งข้อความถึง <%= selectedInbox.username %></p>
+                                        </div>
+                                    <% } %>
+                                </div>
+                            </div>
+
+                            <!-- Input -->
+                            <form id="chatForm" class="flex items-center gap-3 border-t border-gray-200 p-4">
+                                <input type="hidden" id="inboxId" value="<%= selectedInbox.inboxId %>">
+                                <input
+                                    type="file"
+                                    id="imageInput"
+                                    accept="image/*"
+                                    multiple
+                                    class="hidden"
+                                >
+                                <button type="button" id="attachButton" class="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-sm text-gray-600 shadow-sm transition hover:bg-gray-50">
+                                    <img src="/images/image-icon.png" alt="แนบรูป" class="h-5 w-5">
+                                </button>
+                                <input
+                                    type="text"
+                                    id="messageInput"
+                                    placeholder="พิมพ์ข้อความ..."
+                                    class="flex-1 max-w-[60%] rounded-full border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200 sm:max-w-none"
+                                >
+                                <button type="submit" class="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500">
+                                    ส่ง
+                                </button>
+                            </form>
+                            <p id="fileCount" class="px-4 pb-4 text-xs text-gray-500"></p>
+                        <% } else { %>
+                            <!-- No Inbox Selected -->
+                            <div class="flex flex-col items-center justify-center h-full text-center p-8">
+                                <svg class="mb-4 h-20 w-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                                <h3 class="text-xl font-semibold text-gray-900">เลือกการสนทนา</h3>
+                                <p class="text-sm text-gray-500 mt-2">เลือกผู้เช่าจากรายการด้านซ้ายเพื่อเริ่มคุย</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <%- include('../partials/confirmation-modal') %>
+    <script src="/scripts/admin/chat.js"></script>
+</body>
+</html>

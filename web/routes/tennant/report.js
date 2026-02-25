@@ -154,8 +154,9 @@ router.get('/view-report', async (req, res) => {
             return buildReportsFromRows(rows);
         });
 
-        const reportsWithBadge = reports.map((report) => ({
+        const reportsWithBadge = reports.map((report, index) => ({
             ...report,
+            index: reports.length - index,
             badge: getStatusBadge(report.status)
         }));
 
@@ -258,13 +259,29 @@ router.get('/report/:id', async (req, res) => {
             return res.redirect('/view-report');
         }
 
+        // Get total count of reports to determine index
+        const [countRows] = await withConnection(async (connection) => {
+            return await connection.execute(
+                `
+                    SELECT COUNT(*) as total,
+                    (SELECT COUNT(*) FROM problems WHERE tenant_id = ? AND created_at >= (
+                        SELECT created_at FROM problems WHERE id = ?
+                    )) as report_index
+                    FROM problems
+                    WHERE tenant_id = ?
+                `,
+                [req.session.account_id, reportId, req.session.account_id]
+            );
+        });
+
         const reportWithBadge = {
             ...reports[0],
+            index: countRows[0].report_index,
             badge: getStatusBadge(reports[0].status)
         };
 
         return res.render('tenant/report-detail', {
-            title: `รายงาน #${String(reportWithBadge.id).padStart(3, '0')}`,
+            title: `รายงาน #${String(reportWithBadge.index).padStart(3, '0')}`,
             report: reportWithBadge
         });
     } catch (error) {
@@ -311,13 +328,29 @@ router.get('/report/:id/edit', async (req, res) => {
             return res.redirect('/view-report');
         }
 
+        // Get total count of reports to determine index
+        const [countRows] = await withConnection(async (connection) => {
+            return await connection.execute(
+                `
+                    SELECT COUNT(*) as total,
+                    (SELECT COUNT(*) FROM problems WHERE tenant_id = ? AND created_at >= (
+                        SELECT created_at FROM problems WHERE id = ?
+                    )) as report_index
+                    FROM problems
+                    WHERE tenant_id = ?
+                `,
+                [req.session.account_id, reportId, req.session.account_id]
+            );
+        });
+
         const reportWithBadge = {
             ...reports[0],
+            index: countRows[0].report_index,
             badge: getStatusBadge(reports[0].status)
         };
 
         return res.render('tenant/report-edit', {
-            title: `แก้ไขรายงาน #${String(reportWithBadge.id).padStart(3, '0')}`,
+            title: `แก้ไขรายงาน #${String(reportWithBadge.index).padStart(3, '0')}`,
             report: reportWithBadge,
             error: req.query.error || null
         });

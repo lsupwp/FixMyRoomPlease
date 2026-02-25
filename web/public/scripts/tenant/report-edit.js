@@ -47,7 +47,7 @@ function handleFiles(files) {
             const div = document.createElement('div');
             div.className = 'relative overflow-hidden rounded-xl bg-gray-200';
             div.innerHTML = `
-                <img src="${e.target.result}" class="h-32 w-full object-cover" />
+                <img src="${e.target.result}" class="h-40 w-full object-cover sm:h-48" />
                 <button 
                     type="button" 
                     onclick="removePreview(this)"

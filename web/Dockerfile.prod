@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1
+
+FROM node:24.13.0-bookworm-slim AS deps
+WORKDIR /app
+
+# Native build deps for packages like bcrypt (used during npm ci)
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+# Install production dependencies only
+RUN npm ci --omit=dev
+
+
+FROM node:24.13.0-bookworm-slim AS build
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build CSS once for production (no watch)
+RUN npx tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify
+
+
+FROM node:24.13.0-bookworm-slim AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Use the non-root 'node' user provided by the official image
+USER node
+
+COPY --chown=node:node --from=build /app ./
+
+EXPOSE 3000
+
+CMD ["node", "index.js"]
