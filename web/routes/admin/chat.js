@@ -65,8 +65,8 @@ const buildMessagesFromRows = (rows) => {
             messageMap.set(row.message_id, {
                 id: row.message_id,
                 sender: row.role,
-                senderName: row.role === 'admin' ? 'คุณ' : row.username,
-                senderAvatar: row.role === 'admin' ? 'A' : row.username.charAt(0).toUpperCase(),
+                senderName: row.role === 'admin' ? 'Admin' : (row.username || 'ผู้ใช้'),
+                senderAvatar: row.role === 'admin' ? 'A' : (row.username ? String(row.username).charAt(0).toUpperCase() : '?'),
                 message: row.message_text,
                 timestamp: formatTime(row.created_at),
                 isDeleted: row.is_deleted,
@@ -139,8 +139,50 @@ router.get('/chat', async (req, res) => {
             }));
         });
 
-        // Get selected inbox
-        const selectedInboxId = req.query.inbox ? parseInt(req.query.inbox) : (inboxes.length > 0 ? inboxes[0].inboxId : null);
+        // Get selected inbox: ?inbox=id หรือ ?tenant=username (จากปุ่มติดต่อผู้แจ้ง)
+        let selectedInboxId = null;
+        if (req.query.inbox) {
+            selectedInboxId = parseInt(req.query.inbox);
+        } else if (req.query.tenant) {
+            let inboxForTenant = inboxes.find((i) => i.username === req.query.tenant);
+            if (!inboxForTenant) {
+                // สร้าง inbox ใหม่ถ้า tenant ยังไม่เคยแชท
+                const newInbox = await withConnection(async (connection) => {
+                    const [tenantRows] = await connection.execute(
+                        `SELECT a.account_id FROM accounts a JOIN tenants t ON t.account_id = a.account_id WHERE a.username = ? AND a.role = 'tenant' LIMIT 1`,
+                        [req.query.tenant]
+                    );
+                    if (tenantRows.length === 0) return null;
+                    const tenantId = tenantRows[0].account_id;
+                    const [insertResult] = await connection.execute(
+                        `INSERT INTO inbox (tenant_id, admin_id) VALUES (?, ?)`,
+                        [tenantId, req.session.account_id]
+                    );
+                    const inboxId = insertResult.insertId;
+                    const [roomRows] = await connection.execute(
+                        `SELECT t.room_number FROM tenants t WHERE t.account_id = ?`,
+                        [tenantId]
+                    );
+                    return {
+                        inboxId,
+                        tenantId,
+                        username: req.query.tenant,
+                        roomNumber: roomRows[0]?.room_number || '-',
+                        lastMessage: 'ยังไม่มีข้อความ',
+                        lastMessageTime: '',
+                        unreadCount: 0,
+                        lastReadMessageId: 0
+                    };
+                });
+                if (newInbox) {
+                    inboxes.unshift(newInbox);
+                    selectedInboxId = newInbox.inboxId;
+                }
+            } else {
+                selectedInboxId = inboxForTenant.inboxId;
+            }
+        }
+        if (selectedInboxId == null && inboxes.length > 0) selectedInboxId = inboxes[0].inboxId;
         
         let messages = [];
         let selectedInbox = null;

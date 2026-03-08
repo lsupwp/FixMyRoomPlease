@@ -1,3 +1,5 @@
+# Prod: รัน ./setup.sh ก่อน build ครั้งแรก | build CSS เอง: cd web && npx tailwindcss -i public/css/input.css -o public/css/style.css --minify
+# จากนั้น: sudo docker compose -f compose.prod.yml up -d --build
 services:
   mysql:
     image: mysql:9.6.0
@@ -24,12 +26,10 @@ services:
       dockerfile: Dockerfile.prod
     container_name: fixmyroom-web
     restart: unless-stopped
+    env_file: .env
     environment:
       NODE_ENV: production
       DB_HOST: mysql
-      DB_USER: root
-      DB_PASSWORD: "P@sword1234!"
-      DB_NAME: fixmyroom
     ports:
       - "3000:3000"
     depends_on:

@@ -1,4 +1,4 @@
-node_modules
+# node_modules included on purpose for prod build (run setup.sh first)
 npm-debug.log
 yarn.lock
 .pnp

@@ -108,10 +108,10 @@ if (document.getElementById('messagesList')) {
             const unreadCount = latestData.unreadCount !== undefined ? latestData.unreadCount : parseInt(inboxItem.dataset.unread) || 0;
             inboxItem.dataset.unread = unreadCount;
             
-            // Update avatar color
-            const avatar = inboxItem.querySelector('div.flex.h-10');
+            // Avatar สีเทาเสมอ (ไม่ใช้สีฟ้าเมื่อมีข้อความใหม่)
+            const avatar = inboxItem.querySelector('.inbox-avatar') || inboxItem.querySelector('div.flex.h-10');
             if (avatar) {
-                avatar.className = `flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${unreadCount > 0 ? 'bg-blue-600' : 'bg-gray-400'} text-sm font-semibold text-white`;
+                avatar.className = 'inbox-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-400 text-sm font-semibold text-white';
             }
             
             // Update username style
@@ -156,11 +156,9 @@ if (document.getElementById('messagesList')) {
                 }
             }
             
-            // Update inbox link styling
+            // เลือกอยู่ = สีฟ้า, อื่น = ขาว (รวมถึงอันที่มีข้อความใหม่)
             const isSelected = String(targetInboxId) === String(inboxId);
-            const boxStyle = isSelected
-                ? 'border-blue-400 bg-blue-50'
-                : (unreadCount > 0 ? 'border-blue-200 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50');
+            const boxStyle = isSelected ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50';
             inboxItem.className = `inbox-item block rounded-lg border p-3 transition ${boxStyle}`;
 
             // Move updated inbox to top only when explicitly requested

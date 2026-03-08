@@ -59,14 +59,17 @@ const formatTime = (value) => {
 
 const buildMessagesFromRows = (rows) => {
     const messageMap = new Map();
+    const isAdmin = (role) => role && String(role).toLowerCase() === 'admin';
 
     rows.forEach((row) => {
         if (!messageMap.has(row.message_id)) {
+            const name = isAdmin(row.role) ? 'Admin' : (row.username || 'ผู้ใช้');
+            const avatar = isAdmin(row.role) ? 'A' : (row.username ? String(row.username).charAt(0).toUpperCase() : '?');
             messageMap.set(row.message_id, {
                 id: row.message_id,
                 sender: row.role,
-                senderName: row.role === 'admin' ? 'Admin Support' : row.username,
-                senderAvatar: row.role === 'admin' ? 'A' : row.username.charAt(0).toUpperCase(),
+                senderName: name,
+                senderAvatar: avatar,
                 message: row.message_text,
                 timestamp: formatTime(row.created_at),
                 isDeleted: row.is_deleted,

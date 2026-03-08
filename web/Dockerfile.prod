@@ -1,38 +1,24 @@
 # syntax=docker/dockerfile:1
-
-FROM node:24.13.0-bookworm-slim AS deps
+# Expects node_modules from host (run ./setup.sh first on Ubuntu)
+FROM node:20-bookworm-slim
 WORKDIR /app
 
-# Native build deps for packages like bcrypt (used during npm ci)
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
-  && rm -rf /var/lib/apt/lists/*
-
+# 1) Package files + node_modules from host (no npm install in Docker)
 COPY package.json package-lock.json ./
-# Install production dependencies only
-RUN npm ci --omit=dev
+COPY node_modules ./node_modules
 
+# 2) Static assets (build CSS yourself: npx tailwindcss -i public/css/input.css -o public/css/style.css --minify)
+COPY public ./public
 
-FROM node:24.13.0-bookworm-slim AS build
-WORKDIR /app
+# 3) App source
+COPY index.js db.js ./
+COPY routes ./routes
+COPY templates ./templates
+COPY scripts ./scripts
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-# Build CSS once for production (no watch)
-RUN npx tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify
-
-
-FROM node:24.13.0-bookworm-slim AS runner
-WORKDIR /app
+RUN test -d node_modules/express || (echo "FATAL: node_modules/express missing — run ./setup.sh first" && exit 1) && chown -R node:node /app
 
 ENV NODE_ENV=production
-
-# Use the non-root 'node' user provided by the official image
 USER node
-
-COPY --chown=node:node --from=build /app ./
-
 EXPOSE 3000
-
 CMD ["node", "index.js"]
