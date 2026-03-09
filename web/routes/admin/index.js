@@ -150,13 +150,17 @@ router.get('/problems', async (req, res) => {
 
         return res.render('admin/view-problen', {
             title: 'จัดการปัญหา',
-            problems: problemsWithBadge
+            problems: problemsWithBadge,
+            searchUsername,
+            searchStatus
         });
     } catch (error) {
         console.error('Problems fetch error:', error);
         return res.render('admin/view-problen', {
             title: 'จัดการปัญหา',
-            problems: []
+            problems: [],
+            searchUsername,
+            searchStatus
         });
     }
 });
