@@ -57,8 +57,6 @@ build/
 .tmp/
 .temp/
 
-# CSS Output (Tailwind)
-web/public/css/style.css
 
 # Test Coverage
 coverage/

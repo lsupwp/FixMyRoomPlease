@@ -36,6 +36,42 @@ const tenantUsers = [
     tenant_lname: 'Chai',
     tenant_email: 'tenant003@example.com',
     tenant_phone: '0800000003'
+  },
+  {
+    username: '4401_manee',
+    password: 'Tenant123!',
+    room_number: '4401',
+    tenant_fname: 'Manee',
+    tenant_lname: 'Srisuk',
+    tenant_email: 'tenant004@example.com',
+    tenant_phone: '0800000004'
+  },
+  {
+    username: '4402_preecha',
+    password: 'Tenant123!',
+    room_number: '4402',
+    tenant_fname: 'Preecha',
+    tenant_lname: 'Rattana',
+    tenant_email: 'tenant005@example.com',
+    tenant_phone: '0800000005'
+  },
+  {
+    username: '4403_wilai',
+    password: 'Tenant123!',
+    room_number: '4403',
+    tenant_fname: 'Wilai',
+    tenant_lname: 'Phromma',
+    tenant_email: 'tenant006@example.com',
+    tenant_phone: '0800000006'
+  },
+  {
+    username: '4309_baimon',
+    password: 'Tenant123!',
+    room_number: '4309',
+    tenant_fname: 'Suphaphit',
+    tenant_lname: 'Phetsurak',
+    tenant_email: 'seos0333@gmail.com',
+    tenant_phone: '0953121905'
   }
 ];
 
