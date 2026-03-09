@@ -61,9 +61,9 @@
                                         <% if (problem.images && problem.images.length > 0) { %>
                                             <div class="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                                 <% problem.images.forEach(function (img) { %>
-                                                    <div class="overflow-hidden rounded-xl bg-gray-200">
+                                                    <div class="overflow-hidden rounded-xl bg-gray-200 pointer-events-none select-none">
                                                         <% if (img.image_url) { %>
-                                                            <img src="<%= img.image_url %>" alt="<%= img.placeholder || 'รูปภาพ' %>" class="h-40 w-full object-cover sm:h-48">
+                                                            <img src="<%= img.image_url %>" alt="<%= img.placeholder || 'รูปภาพ' %>" class="h-40 w-full object-cover sm:h-48" draggable="false">
                                                         <% } else { %>
                                                             <div class="h-40 bg-gradient-to-br <%= img.gradient %> flex items-center justify-center text-xs text-white font-semibold sm:h-48">
                                                                 <%= img.placeholder %>
