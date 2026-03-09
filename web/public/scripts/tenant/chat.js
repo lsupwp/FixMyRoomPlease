@@ -154,6 +154,10 @@ ws.onmessage = (event) => {
             return;
         }
 
+        if (data.type === 'unread-update' || data.type === 'inboxes-update') {
+            return;
+        }
+
         if (data.inboxId == inboxId && data.sender !== userRole) {
             addMessage(data, false);
         }
