@@ -24,6 +24,7 @@
                                     type="text"
                                     id="searchUsername"
                                     placeholder="ค้นหา username..."
+                                    value="<%= locals.searchUsername || '' %>"
                                     class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
                                 />
                             </div>
@@ -33,9 +34,9 @@
                                     id="searchStatus"
                                     class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
                                 >
-                                    <option value="">ทั้งหมด</option>
-                                    <option value="unresolved">รอการแก้ไข</option>
-                                    <option value="resolved">แก้ไขแล้ว</option>
+                                    <option value="" <%= (!locals.searchStatus) ? 'selected' : '' %>>ทั้งหมด</option>
+                                    <option value="unresolved" <%= (locals.searchStatus === 'unresolved') ? 'selected' : '' %>>รอการแก้ไข</option>
+                                    <option value="resolved" <%= (locals.searchStatus === 'resolved') ? 'selected' : '' %>>แก้ไขแล้ว</option>
                                 </select>
                             </div>
                         </div>

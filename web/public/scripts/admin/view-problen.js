@@ -13,8 +13,19 @@ function filterProblems() {
     window.location.href = '/admin/problems' + (queryString ? '?' + queryString : '');
 }
 
-searchUsernameInput.addEventListener('input', filterProblems);
+let debounceTimer;
+searchUsernameInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(filterProblems, 500);
+});
 searchStatusSelect.addEventListener('change', filterProblems);
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (searchUsernameInput.value) {
+        searchUsernameInput.focus();
+        searchUsernameInput.setSelectionRange(searchUsernameInput.value.length, searchUsernameInput.value.length);
+    }
+});
 
 function markAsResolved(problemId) {
     openConfirmationModal({
